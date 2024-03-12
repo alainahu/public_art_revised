@@ -17,10 +17,6 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
-#install.packages("modelsummary")
-#install.packages("sf")
-#install.packages("ggrepel")
-
 
 library(tidyverse)
 library(knitr)
@@ -29,19 +25,24 @@ library(dplyr)
 library(ggplot2)
 library(sf)
 library(ggrepel)
+library(here)
+library(rstanarm)
+library(arrow)
+library(tidybayes)
+library(modelsummary)
 ```
 
 
 # Introduction
 
-Public art installations, or art pieces available to the general public in open spaces can be found in many urban cities across the world. Installations can be found in
-New York City, Chicago, London, and even Toronto. The city of Toronto has over 400 public art installations provided by two organizations, Public Arts & Monument Collection and the Percent for Public Art Program. Public art not only enhances the urban environment, but it also brings together visitors and residents with local culture and history, creating an educational and bonding experience [@Barone]. 
+Public art installations, or art pieces available to the general public in open spaces can be found in many urban cities across the world. The city of Toronto has over 400 public art installations provided by two organizations, Public Arts & Monument Collection and the Percent for Public Art Program. Public art not only enhances the urban environment, but it also brings together visitors and residents with local culture and history, creating an educational and bonding experience [@Barone]. 
 
 Public art design is heavily integrated with urban planning and development as a whole. It is crucial for overall public art design to consider the overall coordination of the environment, meaning that public art should consider and reflect the environment that it is in [@Meng]. Furthermore, public art is also an important symbol of maturity in a city [@Liu]. Thus, our research is interested in the factors that influence public art design and selection of location. We analyze the trend between urbanization, cultural diversity, and wealth on the locations of public art installations in Toronto. 
 
-Existing research on public art often focuses on the effects of public art, making public the explanatory variable. @Wright examine how public art created by Black artists in the Third Ward of Houston engages with gentrification and ghettoization. @Smith looks at the effect of public art on societal interactions that reflect complexities of Egyptian society.  Our research adds on to the literature by conducting analysis on public art as a response variable. While the societal and public art relationship could be bidirectional, we are interested in exploring the relationship between socioeconomic factors on public space usage with statistical methods.
+Existing research on public art often focuses on the effects of public art, making public the explanatory variable. @Wright examine how public art created by Black artists in the Third Ward of Houston engages with gentrification and ghettoization. @Smith looks at the effect of public art on societal interactions that reflect complexities of Egyptian society.  Our research adds on to the literature by conducting analysis on public art as a response variable. While the societal and public art relationship could be bidirectional, we are interested in exploring the relationship between socioeconomic factors on public space usage with statistical methods. The estimand is the impact of population, minority population, and income 
+on number of public art installations. 
 
-Our research paper begins with the Data section to visualize and further understand the variables we are examining. Next, we go into Discussion of the relationships between the data we are looking for. Finally, we end the paper with the Conclusion section, summarizing the takeaway and future of this research. 
+Our research paper begins with the Data section to visualize and further understand the measurement, source, methodology, and variables we are examining. Then, we introduce the Model used to understand the relationships in the data and report the findings in the Results section. Finally, we include the Discussion of the findings, summarizing the takeaway and future of this research.
 
 
 
@@ -60,7 +61,8 @@ ward location, we focus on these two aspects of the data. As shown in @tbl-clean
 
 ```{r}
 #| echo: false
-art_data <- read_csv("/cloud/project/outputs/data/cleaned_art_data.csv", show_col_types = FALSE)
+art_file_path <- here("outputs", "data", "cleaned_art_data.csv")
+art_data <- read_csv(art_file_path, show_col_types = FALSE)
 
 ```
 
@@ -72,7 +74,8 @@ art_data <- read_csv("/cloud/project/outputs/data/cleaned_art_data.csv", show_co
 
 art_data |>
   slice(1:5) |>
-  kable(col.names = c("Art ID", "Ward", "Ward Name")) |>
+  kable(col.names = c("Art ID", "Ward", "Ward Name"),
+        align = c('c', 'c', 'l')) |>
   kable_styling(latex_options = c("hold_position"))
 
 ```
@@ -89,11 +92,14 @@ of population, minority population, income on the number of art works across the
 #| label: tbl-cleaned_ward
 #| tbl-cap: Sample of cleaned Toronto 25 Ward data
 #| echo: false
-ward_data <- read_csv("/cloud/project/outputs/data/cleaned_ward_data.csv", show_col_types = FALSE)
+
+ward_file_path <- here("outputs", "data", "cleaned_ward_data.csv")
+ward_data <- read_csv(ward_file_path, show_col_types = FALSE)
 
 ward_data |>
   slice(1:5) |>
-  kable(col.names = c("Ward", "Population", "Minority Population", "Income")) |>
+  kable(col.names = c("Ward", "Population", "Minority Population", "Income"),
+        align = c('c', 'c', 'c', 'c')) |>
   kable_styling(latex_options = c("hold_position"))
 
 ```
@@ -107,11 +113,14 @@ As we are interested in the number of public art pieces in each ward, we take th
 #| label: tbl-art_by_ward
 #| tbl-cap: Number of public art installations by ward.
 #| echo: false
-art_ward_data <- read_csv("/cloud/project/outputs/data/analysis_data.csv", show_col_types = FALSE)
+
+art_ward_path <- here("outputs", "data", "analysis_data.csv")
+art_ward_data <- read_csv(art_ward_path, show_col_types = FALSE)
 
 art_ward_data |>
   select(WARD,ward_name, n) |>
-  kable(col.names = c("Ward", "Ward Name", "Number of Public Art Pieces")) |>
+  kable(col.names = c("Ward", "Ward Name", "Number of Public Art Pieces"),
+        align = c('c', 'l', 'r')) |>
   kable_styling(latex_options = c("hold_position"))
 
 ```
@@ -167,11 +176,62 @@ ggplot(data = toronto_map) +
   geom_sf(data = toronto_map[toronto_map$AREA_S_CD == "11",], fill = 'darkblue', color = 'black') + 
   theme_minimal() 
 ```
+
+```{r}
+#| tbl-cap: "Summary Statistics"
+#| label: tbl-summ-stats
+#| echo: false
+
+summary <- art_ward_data |>
+  summarise(
+    Mean_Art = mean(n, na.rm = TRUE),
+    Median_Art = median(n, na.rm = TRUE),
+    SD_Art = sd(n, na.rm = TRUE),
+    Min_Art = min(n, na.rm = TRUE),
+    Max_Art = max(n, na.rm = TRUE),
+    Mean_Population = mean(population, na.rm = TRUE),
+    Median_Population = median(population, na.rm = TRUE),
+    SD_Population = sd(population, na.rm = TRUE),
+    Min_Population = min(population, na.rm = TRUE),
+    Max_Population = max(population, na.rm = TRUE),
+    Mean_Min = mean(minority_population, na.rm = TRUE),
+    Median_Min = median(minority_population, na.rm = TRUE),
+    SD_Min = sd(minority_population, na.rm = TRUE),
+    Min_Min = min(minority_population, na.rm = TRUE),
+    Max_Min = max(minority_population, na.rm = TRUE),
+    Mean_Income = mean(income, na.rm = TRUE),
+    Median_Income = median(income, na.rm = TRUE),
+    SD_Income = sd(income, na.rm = TRUE),
+    Min_Income = min(income, na.rm = TRUE),
+    Max_Income = max(income, na.rm = TRUE)
+  )
+
+long_summary_stats <-  summary |>
+  pivot_longer(cols = everything(), names_to = "Statistic", values_to = "Value") |>
+  separate(Statistic, into = c("Measure", "Variable"), sep = "_") |>
+  spread(key = Measure, value = Value) |>
+  select(Variable, Mean, Median, SD, Min, Max)
+
+long_summary_stats$Variable <- c("Art Works", "Population", "Minority Population", "Income")
+
+kable(long_summary_stats,
+      format = "markdown",
+      digits = 2,
+      col.names = c("Variable", "Mean", "Median", "Standard. Deviation", "Min", "Max"),
+      row.names = FALSE,
+      align = c('l', 'c', 'c', 'c', 'c', 'c'), 
+      )
+```
+
+
+
 ## Public Art, Population, Minority Population, Income by Ward 
 As the goal of this research is to analyze the impact of urbanization, cultural
 diversity, and income on the locations of public art pieces, we combine the Public
 Art Data grouped by ward with the Ward Profile Data to create the analysis data
 we are interested in. The analysis dataset includes the ward number, ward name, population of the ward, minority population in the ward, and average total income of households in 2020. Below in @tbl-all_variables is a sample of the analysis data. 
+
+\newpage
 ```{r}
 #| echo: false
 #| label: tbl-all_variables
@@ -179,7 +239,8 @@ we are interested in. The analysis dataset includes the ward number, ward name, 
 art_ward_data |>
   select(WARD, ward_name, population, minority_population, income, n) |>
   slice(1:5) |>
-  kable(col.names = c("Ward", "Ward Name", "Population", "Minority Population", "Income", "Public Art")) |>
+  kable(col.names = c("Ward", "Ward Name", "Population", "Minority Population", "Income", "Public Art"),
+        align = c('c', 'l', 'c', 'c', 'c', 'c')) |>
   kable_styling(latex_options = c("hold_position"))
 ```
 
@@ -240,6 +301,115 @@ Lastly, in this research we are hoping to look at the relationship between incom
 
 Similar to the relationship between minority population and public art, we observe no relationship between average household income level and public art. 
 
+# Model
+Here we briefly describe the Bayesian analysis model used to investigate.
+
+## Model set-up
+From the data visualization performed in the Data section, we observe a moderately positive relationship between population and number of public art installations. First, we build a simple linear regression model to further explore the population and public art relationship. Next, we build a multiple linear regression model between all explanatory variables and public art. Although our data visualizations did now show any relationship between minority population with public art and average household income level with public art, we add these two variables into the multiple regression model to act as controls. Through the multiple regression model, we are able to assess the number of public art installations related with population while adjusting for the explanatory variables of minority population and income. 
+
+### Simple Linear Regression
+Define $y_i$ as the number of public art pieces in the ward $i$. Then $population_i$ is the population of ward $i$
+
+\begin{align}
+y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
+\mu_i &= \beta_0 + \beta_1 \times \mbox{population}_i \\
+\beta_0 &\sim \mbox{Normal}(0, 82) \\
+\beta_1 &\sim \mbox{Normal}(0, 7.7) \\
+\sigma &\sim \mbox{Exponential}(0.031)
+\end{align}
+
+
+### Multiple Linear Regression
+Define $y_i$ as the number of public art pieces in the ward $i$. Then $population_i$ is the population of ward $i$, $minority_i$ is the minority population of ward $i$, and $income_i$ is the average household income of ward $i$. 
+
+\begin{align}
+y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
+\mu_i &= \beta_0 + \beta_1 \times \mbox{population}_i + \beta_2 \times \mbox{minority}_i + \beta_3 \times \mbox{income}_i \\
+\beta_0 &\sim \mbox{Normal}(0, 82) \\
+\beta_1 &\sim \mbox{Normal}(0, 7.72) \\
+\beta_2 &\sim \mbox{Normal}(0, 4.01) \\
+\beta_3 &\sim \mbox{Normal}(0, 2.41) \\
+\sigma &\sim \mbox{Exponential}(0.031)
+\end{align}
+
+
+We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. Initially, we use the default priors from `rstanarm`, however, we allow `rstanarm` to improve the priors by scaling them based on the data. We allow auto-scaling and run both models with the updated priors specified above. 
+
+
+## Model justification
+
+\newpage
+
+# Results
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+first_model <-
+  readRDS(file = here::here("models/first_model.rds"))
+
+second_model <-
+  readRDS(file = here::here("models/second_model.rds"))
+
+neg_binomial <-
+  readRDS(file = here::here("models/neg_bin.rds"))
+
+poisson <- 
+  readRDS(file = here::here("models/poisson.rds"))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-modelresults
+#| tbl-cap: "Explanatory models of public art works based on population"
+#| warning: false
+
+modelsummary::modelsummary(
+  list(
+    "Simple linear model" = first_model,
+    "Multiple regression model" = second_model
+  ),
+  statistic = "mad",
+  fmt = 2
+)
+```
+
+
+
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: fig-modelresultsfig
+#| fig-cap: "Explanatory models of public art works based on population"
+#| warning: false
+
+modelplot(second_model, conf_level = 0.9) +
+  labs(x = "90 per cent credibility interval")
+
+```
+
+
+
+
+```{r}
+#| echo: false
+#| eval: true
+#| message: false
+#| warning: false
+#| label: fig-plots
+#| fig-cap: "Checking the convergence of the MCMC algorithm"
+#| fig-subcap: ["Trace plot", "Rhat plot"]
+#| layout-ncol: 2
+
+plot(poisson, "trace")
+
+plot(poisson, "rhat")
+```
 # Discussion
 From the data visualizations and observed relationships in the Data section, we see that there is a positive relationship between population and number of public art installations, but there is no relationship between minority population with number of public art pieces and income level with number of public art pieces. Perhaps there are better explanatory variables for the locations of public art installations than minority population and income of a region. After all, public art design is a complicated process and public space designers often have to make many decisions when selecting a location for a public art installation. Deeper research can better help us understand the process of urban public space design.
 
@@ -248,7 +418,53 @@ Further analysis can be conducted to verify the significance of the positive rel
 # Conclusion
 With the purpose of investigating the relationship between urbanization, cultural diversity, and wealth on public art in Toronto, we find a moderate positive relationship between population and number of public art installations by ward. The research finds no relationship between minority population or wealth on the number of public art pieces. suggesting that there may be stronger factors that affect the locations of public art in the city. Further research could focus on the impact of population and urbanization on public art while searching for other potential variables of public art location. 
 
+\newpage
 
+\appendix
+
+# Appendix {-}
+
+
+
+
+# Model details {#sec-model-details}
+
+## Posterior predictive check
+
+In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows the comparison between the actual outcome variable (public art installations) with simulations from the posterior distribution. 
+
+In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows how much the estimates of the coefficients of our variables population, minority population, and income have changed once data was taken into account.
+```{r}
+#| eval: true
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-ppcheckandposteriorvsprior
+#| layout-ncol: 2
+#| fig-cap: "Examining how the model fits, and is affected by, the data"
+#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+
+analysis_data_path <- here("outputs", "data", "analysis_data.csv")
+analysis_data <- read_csv(analysis_data_path)
+
+analysis_data <- analysis_data |>
+  mutate(
+    population = population / 1000,
+    minority_population = minority_population / 1000,
+    income = income / 1000
+  )
+
+
+pp_check(poisson) +
+  theme_classic() +
+  theme(legend.position = "bottom")
+
+posterior_vs_prior(poisson) +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
 
 # References
 
