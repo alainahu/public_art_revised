@@ -7,7 +7,7 @@ This repo provides the raw datasets, cleaned datasets, and scripts for the resea
 
 **Statement on LLM usage: OpenAI ChatGPT was used to generate some of the code involved in the data analysis of this research. The entire chat history is available in inputs/llms/usage.txt.**
 
-**Datasheet is available in outputs/data/Datasheet.pdf
+**Datasheet is available in outputs/data/Datasheet.pdf**
 
 ## File Structure
 
