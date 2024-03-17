@@ -13,7 +13,7 @@ library(tidyverse)
 library(rstanarm)
 library(arrow)
 #### Read data ####
-analysis_data <- read_csv("outputs/data/analysis_data.csv")
+analysis_data <- read_parquet("outputs/data/analysis_data.parquet")
 
 analysis_data <- analysis_data |>
   mutate(
@@ -71,7 +71,8 @@ neg_binomial <-
 
 prior_summary(first_model)
 prior_summary(second_model)
-
+prior_summary(poisson)
+prior_summary(neg_binomial)
 
 #### Save model ####
 saveRDS(

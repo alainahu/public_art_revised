@@ -10,6 +10,7 @@
 #### Workspace setup ####
 library(tidyverse)
 library(knitr)
+library(arrow)
 
 #### Clean data ####
 raw_data_1 <- read_csv("inputs/data/unedited_data.csv")
@@ -56,6 +57,7 @@ analysis_data$income <- as.numeric(analysis_data$income)
 analysis_data$ward_name <- ward_names
 
 #### Save data ####
-write_csv(cleaned_art_data, "/cloud/project/outputs/data/cleaned_art_data.csv")
-write_csv(cleaned_ward_data, "/cloud/project/outputs/data/cleaned_ward_data.csv")
-write_csv(analysis_data, "/cloud/project/outputs/data/analysis_data.csv")
+write_csv(cleaned_art_data, "outputs/data/cleaned_art_data.csv")
+write_csv(cleaned_ward_data, "outputs/data/cleaned_ward_data.csv")
+write_csv(analysis_data, "outputs/data/analysis_data.csv")
+write_parquet(analysis_data, "outputs/data/analysis_data.parquet")

@@ -2,10 +2,10 @@
 title: "The Impact of Urbanization, Culture, and Wealth on Public Art in Toronto"
 author: 
   - Alaina Hu
-thanks: "Code and data are available at: https://github.com/alainahu/public_art"
+thanks: "Code and data are available at: https://github.com/alainahu/public_art_revised"
 date: today
 date-format: long
-abstract: "Public art has emerged in many urban cities across the world. Existing research and analysis on public art often focuses on the impact of public art on various factors, making public art the explanatory variable. This paper examines public art as a response variable to explanatory variables such as population, minority population, and income as a measure of urbanization, culture, and wealth respectively with Public Art Data and Ward Data for the city of Toronto. Through data visualization, we find a moderately positive relationship between population and public art but no relationship between minority population and public art or income and public art."
+abstract: "Public art has emerged in many urban cities across the world. Existing research and analysis on public art often focuses on the impact of public art on various factors, making public art the explanatory variable. This paper examines public art as a response variable to explanatory variables such as population, minority population, and income as a measure of urbanization, culture, and wealth respectively for the city of Toronto. Through data visualization, we find a moderately positive relationship between urbanization and public art but no relationship between diversity and public art or wealth and public art."
 format: pdf
 toc: true
 number-sections: true
@@ -16,6 +16,7 @@ bibliography: references.bib
 #| include: false
 #| warning: false
 #| message: false
+
 
 
 library(tidyverse)
@@ -30,6 +31,8 @@ library(rstanarm)
 library(arrow)
 library(tidybayes)
 library(modelsummary)
+library(broom.mixed)
+library(parameters)
 ```
 
 
@@ -39,18 +42,20 @@ Public art installations, or art pieces available to the general public in open 
 
 Public art design is heavily integrated with urban planning and development as a whole. It is crucial for overall public art design to consider the overall coordination of the environment, meaning that public art should consider and reflect the environment that it is in [@Meng]. Furthermore, public art is also an important symbol of maturity in a city [@Liu]. Thus, our research is interested in the factors that influence public art design and selection of location. We analyze the trend between urbanization, cultural diversity, and wealth on the locations of public art installations in Toronto. 
 
-Existing research on public art often focuses on the effects of public art, making public the explanatory variable. @Wright examine how public art created by Black artists in the Third Ward of Houston engages with gentrification and ghettoization. @Smith looks at the effect of public art on societal interactions that reflect complexities of Egyptian society.  Our research adds on to the literature by conducting analysis on public art as a response variable. While the societal and public art relationship could be bidirectional, we are interested in exploring the relationship between socioeconomic factors on public space usage with statistical methods. The estimand is the impact of population, minority population, and income 
-on number of public art installations. 
+Existing research on public art often focuses on the effects of public art, making public the explanatory variable. @Wright examine how public art created by Black artists in the Third Ward of Houston engages with gentrification and ghettoization. @Smith looks at the effect of public art on societal interactions that reflect complexities of Egyptian society.  Our research adds on to the literature by conducting analysis on public art as a response variable. While the societal and public art relationship could be bidirectional, we are interested in exploring the relationship between socioeconomic factors on public space usage with statistical methods. The estimand is the impact of population, minority population, and income on number of public art installations. We find a positive relationship between population and number of public art installations but no relationship between minority population and public art or income and public art. We conclude that urbanization increases the the number of public art installations in an area when holding cultural diversity and wealth constant. 
 
 Our research paper begins with the Data section to visualize and further understand the measurement, source, methodology, and variables we are examining. Then, we introduce the Model used to understand the relationships in the data and report the findings in the Results section. Finally, we include the Discussion of the findings, summarizing the takeaway and future of this research.
 
 
 
 # Data
-Data analysis is performed in `R` [@citeR], and additional help is provided by libraries such as `dplyr` [@dplyr], `ggplot2` [@ggplot], `ggrepel` [@ggrepel], `tidyverse` [@thereferencecanbewhatever], `kableExtra` [@kableextra], `knitr` [@knitr], and `sf` [@pebesma2023spatial], `opendatatoronto` [@toronto], and `readxl` [@excel]. 
+Data analysis is performed in `R` [@citeR], and additional help is provided by libraries such as `dplyr` [@dplyr], `ggplot2` [@ggplot], `ggrepel` [@ggrepel], `tidyverse` [@thereferencecanbewhatever], `kableExtra` [@kableextra], `knitr` [@knitr], and `sf` [@pebesma2023spatial], `opendatatoronto` [@toronto], `readxl` [@excel], `here` [@here], `rstanarm` [@rstan], `arrow` [@arrow], `tidybayes` [@tidybayes], `modelsummary` [@modelsummary], `broom` [@broom], and `parameters` [@parameters]. 
 Data for this research comes from Open Data Toronto [@toronto], an open source data portal containing various topics of data for the city. 
 For the data involved in this paper, we combine `Public Art` [@PublicArt] and `Ward Profiles (25-Ward Model)` [@WardProfile]
-In order to examine urbanization, cultural diversity, and wealth, we use population, minority population, and average household income as the explanatory variables to represent these factors. To analyze this trend across Toronto, we look at the effect of population, minority population, and average household income on the number of public art installations across the 25 wards of Toronto. 
+ 
+
+## Measurement
+In order to examine urbanization, cultural diversity, and wealth, we use population, minority population, and average household income as the explanatory variables to represent these factors. Population dynamics - the driving forces behind the growth and movement of populations, play an important role in the urbanization process [@Salas]. Toronto is an important cultural center, with many ethnic groups organizing traditional festivals, entertainment events, and social activities [@Howarth]. Household income is not the sole indicator of wealth, but it is heavily related to wealth as both income and wealth are key indicators of financial security [@Schaeffer]. Supported by the literature, we use population, minority population and household income data to measure urbanization, cultural diversity, and wealth. To analyze this trend across Toronto, we look at the effect of these variables across the 25 wards of Toronto.
 
 ## Public Art
 The Public Art raw dataset includes information such as the source, artist, title, medium, installation year, and ward location on the 409 public art pieces
@@ -249,7 +254,7 @@ As one of our variables of interest, we are determined to examine the relationsh
 ```{r}
 #| echo: false
 #| label: pop_n
-#| fig-cap: "Plot of Population and Public Art by Ward"
+#| fig-cap: "Positive relationship in population and public art by ward number"
 #| warning: false 
   ggplot(data = art_ward_data, aes(x = population, y = n, label = WARD)) +
   geom_point() +
@@ -269,7 +274,7 @@ Another explanatory variable we are interested in is the cultural diversity of a
 #| echo: false
 #| warning: false 
 #| label: fig-minority-n
-#| fig-cap: "Plot of Minority Population and Public Art by Ward"
+#| fig-cap: "No relationship between minority population and public art works by ward number"
   ggplot(data = art_ward_data, aes(x = minority_population, y = n, label = WARD)) +
   geom_point() +
   geom_text_repel(hjust=-0.5, vjust=0.5) +
@@ -287,7 +292,7 @@ Lastly, in this research we are hoping to look at the relationship between incom
 #| echo: false
 #| warning: false 
 #| label: fig-income-n
-#| fig-cap: "Plot of Income and Public Art by Ward"
+#| fig-cap: "No relationship between income and public art by ward number"
 #| fig.pos: 'H'
   ggplot(data = art_ward_data, aes(x = income, y = n, label = WARD)) +
   geom_point() +
@@ -302,10 +307,10 @@ Lastly, in this research we are hoping to look at the relationship between incom
 Similar to the relationship between minority population and public art, we observe no relationship between average household income level and public art. 
 
 # Model
-Here we briefly describe the Bayesian analysis model used to investigate.
+Here we briefly describe the Bayesian analysis models used to investigate.
 
 ## Model set-up
-From the data visualization performed in the Data section, we observe a moderately positive relationship between population and number of public art installations. First, we build a simple linear regression model to further explore the population and public art relationship. Next, we build a multiple linear regression model between all explanatory variables and public art. Although our data visualizations did now show any relationship between minority population with public art and average household income level with public art, we add these two variables into the multiple regression model to act as controls. Through the multiple regression model, we are able to assess the number of public art installations related with population while adjusting for the explanatory variables of minority population and income. 
+From the data visualization performed in the Data section, we observe a moderately positive relationship between population and number of public art installations. Here, we build a simple linear regression model to further explore the population and public art relationship. Next, we build a multiple linear regression model between all explanatory variables and public art. Although our data visualizations did now show any relationship between minority population with public art and average household income level with public art, we add these two variables into the multiple regression model to act as controls. Through the multiple regression model, we are able to assess the number of public art installations related with population while adjusting for the explanatory variables of minority population and income. Ih the poisson and negative binomial regression models, we include all explanatory variables as well.
 
 ### Simple Linear Regression
 Define $y_i$ as the number of public art pieces in the ward $i$. Then $population_i$ is the population of ward $i$
@@ -332,11 +337,41 @@ y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
 \sigma &\sim \mbox{Exponential}(0.031)
 \end{align}
 
+### Poisson Regression
+Define $y_i$ as the log count of public art pieces in the ward $i$. Then $population_i$ is the population of ward $i$, $minority_i$ is the minority population of ward $i$, and $income_i$ is the average household income of ward $i$. 
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. Initially, we use the default priors from `rstanarm`, however, we allow `rstanarm` to improve the priors by scaling them based on the data. We allow auto-scaling and run both models with the updated priors specified above. 
+\begin{align}
+y_i|\lambda_i &\sim \mbox{Poisson}(\lambda_i) \\
+log(\lambda_i) &= \beta_0 + \beta_1 \times \mbox{population}_i + \beta_2 \times \mbox{minority}_i + \beta_3 \times \mbox{income}_i \\
+\beta_0 &\sim \mbox{Normal}(0, 2.5) \\
+\beta_1 &\sim \mbox{Normal}(0, 0.236) \\
+\beta_2 &\sim \mbox{Normal}(0, 0.123) \\
+\beta_3 &\sim \mbox{Normal}(0, 0.074)
+\end{align}
+
+### Negative Binomial Regression
+Define $y_i$ as the log count of public art pieces in the ward $i$. Then $population_i$ is the population of ward $i$, $minority_i$ is the minority population of ward $i$, and $income_i$ is the average household income of ward $i$. 
+
+\begin{align}
+y_i|\lambda_i, \alpha &\sim \mbox{NegativeBinomial}(\lambda_i, \alpha) \\
+\log(\lambda_i) &= \beta_0 + \beta_1 \times \mbox{population}_i + \beta_2 \times \mbox{minority}_i + \beta_3 \times \mbox{income}_i \\
+\beta_0 &\sim \mbox{Normal}(0, 2.5) \\
+\beta_1 &\sim \mbox{Normal}(0, 0.236) \\
+\beta_2 &\sim \mbox{Normal}(0, 0.123) \\
+\beta_3 &\sim \mbox{Normal}(0, 0.074) \\
+\alpha &\sim \mbox{Exponential}(1)
+\end{align}
+
+We run the model in R [@citeR] using the `rstanarm` package of @rstan. Initially, we use the default priors from `rstanarm`, however, we allow `rstanarm` to improve the priors by scaling them based on the data. We allow auto-scaling and run both models with the updated priors specified above. 
 
 
 ## Model justification
+We expected a positive linear relationship between population and the number of public art installations. Thus, our first model was a simple linear regression model with population as the only explanatory variable. From our exploratory data analysis, we observed that there was a positive correlation between population and public art installations but no relationship from minority population and income. However, we wanted to look at the effect of population on public art while controlling for the other variables. This prompted us to develop a multiple regression model with all the variables of interest. From Appendix @fig-ppcheckandposteriorvsprior-1, we see that the multiple regression model is not a good fit for the observed data. 
+
+To improve our model, we consider the Poisson regression model with all the explanatory variables because we have count data, the number of public art pieces. From Appendix @fig-ppcheckandposteriorvsprior-2, we see that the Poisson regression is an improved fit from the multiple regression model. However, the key assumption that the mean and variance are equal is violated. From @tbl-summ-stats, we see that mean and variance are not equal. 
+
+Since an important assumption for the Poisson regression model does not hold, we build a negative binomial model. We can relax the assumption of mean and variance as equal in negative binomial model. The negative binomial regression model is a close variant of the Poisson model with looser assumptions. However, from Appendix 
+@fig-ppcheckandposteriorvsprior-3, we see that the model does not capture the full range of observed data, so this model does not capture the data well and would need adjustment.
 
 \newpage
 
@@ -361,6 +396,7 @@ poisson <-
   readRDS(file = here::here("models/poisson.rds"))
 ```
 
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -370,16 +406,63 @@ poisson <-
 
 modelsummary::modelsummary(
   list(
-    "Simple linear model" = first_model,
-    "Multiple regression model" = second_model
+    "Simple linear" = first_model,
+    "Multiple regression" = second_model,
+    "Poisson" = poisson,
+    "Negative binomial" = neg_binomial
   ),
-  statistic = "mad",
+  statistic = "conf.int",
   fmt = 2
 )
+
+
+
 ```
 
+@tbl-modelresults displays the results for the simple linear model, multiple regression model, Poisson model, and negative binomial model. All four models have negative intercepts and positive coefficients for the population variable.
+
+In the simple linear model, the negative y-intercept of -156.58 means that when population in a ward is zero, the number of public art installations is -156.58. However, this is not a practical interpretation and the y-intercept just helps with level effects. The coefficient of 1.56 for population means that for every increase of 1000 in population, the number of public art pieces increases by 1.56. 
+
+In the multiple regression model, the negative y-intercept of -172.93 helps level the number of art installations and has no practical significance because we cannot have a negative number of public art pieces. The coefficient of 1.58 means that when controlling for minority population and income, an increase of 1000 in the population increases the number of public art pieces by 1.58. When comparing the population coefficient of the multiple regression model with the population coefficient in the simple linear regression, we notice that the coefficient is larger in the multiple regression model. After controlling for minority population and income, population has a greater effect on the number of public art pieces.
+
+In the Poisson model, the negative intercept continues to have no practical meaning. The coefficient for the population variables indicates that for each increase in population of 1000 people, the log count of public art pieces is expected to increase by 0.07 after holding minority population and income constant. 
+
+In the negative binomial model, the negative intercept has no practical meaning again. The coefficient for the population variables indicates that for each increase in population of 1000 people, the log count of public art pieces is expected to increase by 0.09 after holding minority population and income constant. 
+
+The simple linear model, multiple regression model, Poisson model, and negative binomial model show that there is no relationship between minority population and art work or income and art work as the coefficients for these variables all have a confidence interval that includes zero.  
+
+The simple linear model, multiple regression model, Poisson model, and negative binomial model all show a positive relationship between population and the number of public art installations even after controlling for minority population and income. The model results differ in the magnitude of the effect of population on the number of public art pieces. 
+
+# Discussion
+
+## Key Findings
+From the data visualizations and observed relationships in the Data section, we see that there is a positive relationship between population and number of public art installations, but there is no relationship between minority population with number of public art pieces or income level with number of public art pieces. We further investigate this relationship by building models. We develop a simple linear regression model, multiple linear regression model, Poisson regression model, and negative binomial regression model. The model results for the four models all show a positive relationship between population and the number of public art installations even after controlling for minority population and income. The model results differ in the magnitude of the effect of population on the number of public art pieces. For the variables of minority population and income, we see little or no effect on public art due to their small coefficients that are close to zero. 
+
+## Weaknesses and Limitations
+From the Appendix posterior prediction checks in @fig-ppcheckandposteriorvsprior-1, @fig-ppcheckandposteriorvsprior-2, and @fig-ppcheckandposteriorvsprior-3, we can see that the multiple regression model and negative binomial model do not fit the data as well as the Poisson regression model. This is an interesting case because our data violates an important assumption of the Poisson regression model: equal mean and variance. In the data, we have 25 observations for the variables since we are comparing data at the ward level across the 25 Toronto wards. The small number of observations combined with the model fit indicates a potential data problem in the research. The relatively small sample size of 25 observations is a critical factor to consider, as it might not only impact the robustness of the statistical models but also reflect on the generalizability of the findings. Small sample sizes can lead to higher variability and may affect the model's ability to accurately capture the underlying distribution of the data.
+
+The superior fit of the Poisson regression model, despite the violation of its core assumption in our data, suggests that the model has inherent flexibility or that the impact of this assumption might not be as critical under certain conditions. This finding prompts a deeper investigation into the nature of the data and the model's assumptions.
+
+Moreover, this scenario underscores a potential issue within the dataset itself. The mismatch between the expected model conditions and the observed data characteristics suggests that there may be underlying factors affecting the data quality or distribution that were not accounted for in the initial analysis. This could range from measurement errors to unaccounted-for variables that could significantly influence the outcomes of the ward-level comparisons. Therefore, this analysis does not merely highlight a statistical anomaly but points to a larger data problem that could have implications for the research's validity and reliability.
+
+In conclusion, the comparative analysis of the regression models provides valuable insights into the complexities of statistical modeling, especially when dealing with real-world data that may not perfectly adhere to theoretical assumptions. The findings call for a cautious approach to interpreting model fits and a critical examination of data quality and assumptions in research. This case serves as a compelling example of the nuances involved in statistical analysis and the importance of adaptability and thoroughness in research methodologies
+
+## Validity
+To add on, we discuss the internal validity and external validity. Internal validity is concerned with the degree to which a study can establish a causal relationship between its variables without external influence. As mentioned previously, our small data problem can affect the internal validity of the research in question. Since we have a small data set, there is a reduction in statistical power, the probability of correctly rejecting a false null hypothesis. Additionally, having a small number of observations increases the risk of overfitting. In this case, the model learns the noise in the data instead of the underlying pattern. External validity extends the concern to how well the study's findings can be generalized beyond the specific conditions, populations, and settings examined. The data has limited number of observations and is at the ward level in Toronto, so generalizing our findings to cities outside Toronto may raise external validity concerns. Toronto's unique socio-economic, cultural, and environmental characteristics may influence the study's variables in ways that are not replicable in other cities. Factors such as policies and economic conditions vary significantly from one city to another, potentially affecting the applicability of the findings elsewhere. 
+
+## Further Steps
+With the purpose of investigating the relationship between urbanization, cultural diversity, and wealth on public art in Toronto, we find a moderate positive relationship between population and number of public art installations by ward supported by data visualization as well as statistical models. The research finds no relationship between minority population or wealth on the number of public art pieces even after analysis with multiple models, suggesting that there may be stronger factors than minority population and income that affect the locations of public art in the city. Although a positive relationship is shown through the Poisson regression model, internal and external validity concerns also leave room for further improvement in the research. Violation in the Poisson model assumptions as well as a small data set calls for a larger data set in future research to address both internal and external validity concerns. With a larger number of observations, model inferences will improve, addressing internal validity. To expand the data set, we can consider gathering data from other cities. Through this, we are also able to address external validity. With the inclusion of a large data set with many cities, we can gather data with socio-economic diversity. When working with more diverse data, we can potentially generalize our findings to urban cities across the world, helping us learn more about the factors that affect public art in urban areas across the world. In conclusion, extending our research to cities across the world could improve the statistical models and validity of the research, enabling us to better understand the effect of urbanization on public art in urban cities. 
+
+\newpage
+
+\appendix
+
+# Appendix {-}
 
 
+
+
+# Model details {#sec-model-details}
 
 ```{r}
 #| echo: false
@@ -388,12 +471,14 @@ modelsummary::modelsummary(
 #| fig-cap: "Explanatory models of public art works based on population"
 #| warning: false
 
-modelplot(second_model, conf_level = 0.9) +
+modelplot(poisson, conf_level = 0.9) +
   labs(x = "90 per cent credibility interval")
 
 ```
 
+# Checking for issues
 
+The Markov chain Monte Carlo sampling algorithm checks for signs that the algorithm has issues. We consider a trace plot @fig-plots-1, and a Rhat plot @fig-plots-2. In @fig-plots-1, we see horizontal lines that bounce around and have overlap between the chains. In @fig-plots-2, we see that everything is close to 1. We do not see anything out of the ordinary in the trace plot or Rhat plot, indicating that the algorithm did not run into any issues. 
 
 
 ```{r}
@@ -410,42 +495,31 @@ plot(poisson, "trace")
 
 plot(poisson, "rhat")
 ```
-# Discussion
-From the data visualizations and observed relationships in the Data section, we see that there is a positive relationship between population and number of public art installations, but there is no relationship between minority population with number of public art pieces and income level with number of public art pieces. Perhaps there are better explanatory variables for the locations of public art installations than minority population and income of a region. After all, public art design is a complicated process and public space designers often have to make many decisions when selecting a location for a public art installation. Deeper research can better help us understand the process of urban public space design.
-
-Further analysis can be conducted to verify the significance of the positive relationship between population and number of public art installations, meaning that we can check if the observed positive relationship is a result of chance or a verified trend. 
-
-# Conclusion
-With the purpose of investigating the relationship between urbanization, cultural diversity, and wealth on public art in Toronto, we find a moderate positive relationship between population and number of public art installations by ward. The research finds no relationship between minority population or wealth on the number of public art pieces. suggesting that there may be stronger factors that affect the locations of public art in the city. Further research could focus on the impact of population and urbanization on public art while searching for other potential variables of public art location. 
-
-\newpage
-
-\appendix
-
-# Appendix {-}
 
 
 
-
-# Model details {#sec-model-details}
 
 ## Posterior predictive check
 
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows the comparison between the actual outcome variable (public art installations) with simulations from the posterior distribution. 
+In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check on the multiple regression model. This shows the comparison between the actual outcome variable (public art installations) with simulations from the posterior distribution. From the figure, we can see that the observed data has a peaked distribution while the posterior predictive distributions are more dispersed. This means that the model is not a good fit and does not replicate the observed distribution well. 
 
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows how much the estimates of the coefficients of our variables population, minority population, and income have changed once data was taken into account.
+In @fig-ppcheckandposteriorvsprior-2 we implement a posterior predictive check on the poisson regression model. This shows the comparison between the actual outcome variable (public art installations) with simulations from the posterior distribution. Here the observed data and posterior predictions have some overlap. This model is a better fit than the multiple regression model.  
+
+In @fig-ppcheckandposteriorvsprior-3 we implement a posterior predictive check on the negative binomial regression model. This shows the comparison between the actual outcome variable (public art installations) with simulations from the posterior distribution. The observed data shows a peak near zero, but the predictive lines do not show any visible peaks despite being concentrated around zero. This does not capture the full range of observed data.
+
+In @fig-ppcheckandposteriorvsprior-4 we compare the posterior with the prior. This shows how much the estimates of the coefficients of our variables population, minority population, and income have changed once data was taken into account.
 ```{r}
 #| eval: true
 #| echo: false
 #| message: false
 #| warning: false
 #| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
+#| layout-ncol: 4
 #| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+#| fig-subcap: ["Posterior prediction check","Posterior prediction check", "Posterior prediction check", "Comparing the posterior with the prior"]
 
-analysis_data_path <- here("outputs", "data", "analysis_data.csv")
-analysis_data <- read_csv(analysis_data_path)
+analysis_data_path <- here("outputs", "data", "analysis_data.parquet")
+analysis_data <- read_parquet(analysis_data_path)
 
 analysis_data <- analysis_data |>
   mutate(
@@ -454,8 +528,15 @@ analysis_data <- analysis_data |>
     income = income / 1000
   )
 
+pp_check(second_model) +
+  theme_classic() +
+  theme(legend.position = "bottom")
 
 pp_check(poisson) +
+  theme_classic() +
+  theme(legend.position = "bottom")
+
+pp_check(neg_binomial) +
   theme_classic() +
   theme(legend.position = "bottom")
 
