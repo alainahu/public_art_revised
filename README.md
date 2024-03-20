@@ -1,4 +1,4 @@
-# Urbanization, Cultural Diversity, and Wealth on Public Art Installations in Toronto
+# Public Art Installations Findings in Toronto
 
 ## Overview
 
