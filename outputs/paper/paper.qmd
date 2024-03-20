@@ -44,17 +44,17 @@ Public art design is heavily integrated with urban planning and development as a
 
 Existing research on public art often focuses on the effects of public art, making public the explanatory variable. @Wright examine how public art created by Black artists in the Third Ward of Houston engages with gentrification and ghettoization. @Smith looks at the effect of public art on societal interactions that reflect complexities of Egyptian society.  Our research adds on to the literature by conducting analysis on public art as a response variable. While the societal and public art relationship could be bidirectional, we are interested in exploring the relationship between socioeconomic factors on public space usage with statistical methods. The estimand is the impact of population, minority population, and income on number of public art installations. We find a positive relationship between population and number of public art installations but no relationship between minority population and public art or income and public art. We conclude that urbanization increases the the number of public art installations in an area when holding cultural diversity and wealth constant. 
 
-Our research paper begins with the Data section to visualize and further understand the measurement, source, methodology, and variables we are examining. Then, we introduce the Model used to understand the relationships in the data and report the findings in the Results section. Finally, we include the Discussion of the findings, summarizing the takeaway and future of this research.
+Our research paper begins with the Data section (@sec-data) to visualize and further understand the measurement, source, methodology, and variables we are examining. Then, we introduce the Model (@sec-model) used to understand the relationships in the data and report the findings in the Results section (@sec-results). Finally, we include the Discussion (@sec-discussion) of the findings, summarizing the takeaway and future of this research.
 
 
 
-# Data
+# Data {#sec-data}
 Data analysis is performed in `R` [@citeR], and additional help is provided by libraries such as `dplyr` [@dplyr], `ggplot2` [@ggplot], `ggrepel` [@ggrepel], `tidyverse` [@thereferencecanbewhatever], `kableExtra` [@kableextra], `knitr` [@knitr], and `sf` [@pebesma2023spatial], `opendatatoronto` [@toronto], `readxl` [@excel], `here` [@here], `rstanarm` [@rstan], `arrow` [@arrow], `tidybayes` [@tidybayes], `modelsummary` [@modelsummary], `broom` [@broom], and `parameters` [@parameters]. 
 Data for this research comes from Open Data Toronto [@toronto], an open source data portal containing various topics of data for the city. 
 For the data involved in this paper, we combine `Public Art` [@PublicArt] and `Ward Profiles (25-Ward Model)` [@WardProfile]
  
 
-## Measurement
+## Measurement 
 In order to examine urbanization, cultural diversity, and wealth, we use population, minority population, and average household income as the explanatory variables to represent these factors. Population dynamics - the driving forces behind the growth and movement of populations, play an important role in the urbanization process [@Salas]. Toronto is an important cultural center, with many ethnic groups organizing traditional festivals, entertainment events, and social activities [@Howarth]. Household income is not the sole indicator of wealth, but it is heavily related to wealth as both income and wealth are key indicators of financial security [@Schaeffer]. Supported by the literature, we use population, minority population and household income data to measure urbanization, cultural diversity, and wealth. To analyze this trend across Toronto, we look at the effect of these variables across the 25 wards of Toronto.
 
 ## Public Art
@@ -306,7 +306,7 @@ Lastly, in this research we are hoping to look at the relationship between incom
 
 Similar to the relationship between minority population and public art, we observe no relationship between average household income level and public art. 
 
-# Model
+# Model {#sec-model}
 Here we briefly describe the Bayesian analysis models used to investigate.
 
 ## Model set-up
@@ -375,7 +375,7 @@ Since an important assumption for the Poisson regression model does not hold, we
 
 \newpage
 
-# Results
+# Results {#sec-results}
 
 ```{r}
 #| echo: false
@@ -433,7 +433,7 @@ The simple linear model, multiple regression model, Poisson model, and negative 
 
 The simple linear model, multiple regression model, Poisson model, and negative binomial model all show a positive relationship between population and the number of public art installations even after controlling for minority population and income. The model results differ in the magnitude of the effect of population on the number of public art pieces. 
 
-# Discussion
+# Discussion {#sec-discussion}
 
 ## Key Findings
 From the data visualizations and observed relationships in the Data section, we see that there is a positive relationship between population and number of public art installations, but there is no relationship between minority population with number of public art pieces or income level with number of public art pieces. We further investigate this relationship by building models. We develop a simple linear regression model, multiple linear regression model, Poisson regression model, and negative binomial regression model. The model results for the four models all show a positive relationship between population and the number of public art installations even after controlling for minority population and income. The model results differ in the magnitude of the effect of population on the number of public art pieces. For the variables of minority population and income, we see little or no effect on public art due to their small coefficients that are close to zero. 
