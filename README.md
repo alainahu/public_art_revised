@@ -1,4 +1,4 @@
-# Starter folder
+# Urbanization, Cultural Diversity, and Wealth on Public Art Installations in Toronto
 
 ## Overview
 
